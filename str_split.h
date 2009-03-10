@@ -12,6 +12,14 @@
 // contsep -> treat two-or-more separator as one separator OR add a   starts[current]=NULL for every two separators
 // return -> num of tokens found
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 int split_str (char *src, char* *starts,int *lengths, int maxstarts, char sep, int contsep);
+
+#ifdef  __cplusplus
+}
+#endif
 
 #endif

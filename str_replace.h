@@ -20,7 +20,15 @@
 #ifndef str_replace_h_SDR_321234msdaa_included
 #define str_replace_h_SDR_321234msdaa_included
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 int str_replace_single (const char *haystack,const char *needle,const char *changeto, char* dst , int dstmaxlen, int hslen, int nlen, int chtolen);
 int str_replace_multiple (const char *haystack,const char *needle,const char *changeto, char* dst , int dstmaxlen, int hslen, int nlen, int chtolen);
+
+#ifdef  __cplusplus
+}
+#endif
 
 #endif
