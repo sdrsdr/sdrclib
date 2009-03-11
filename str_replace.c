@@ -240,6 +240,11 @@ int str_replace_ph_remove_ph (
 }
 
 
+int str_replace_ph_prepare (phctx_t *ctx){
+	if (!ctx) return 0; ///@return 0 on failure
+	
+	return 1; /// @return 1 on all OK
+}
 
 
 
