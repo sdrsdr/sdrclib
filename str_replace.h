@@ -20,11 +20,96 @@
 #ifndef str_replace_h_SDR_321234msdaa_included
 #define str_replace_h_SDR_321234msdaa_included
 
+
+ /** \file str_replace.h
+      \brief String replacement functions.
+      \author Stoian Ivanov sdr@tera-com.com
+      \example str_replace.example.c
+  */
+
+
+#include <stdlib.h>
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
+///malloc() proto as type
+typedef void * (malloc_ft) (size_t SIZE); 
+
+///free() proto as type
+typedef void (free_ft) (void *PTR); 
+
+///pattern replace context
+typedef struct {
+	malloc_ft* malloc; ///use this malloc implementation
+	free_ft* free; ///use this free implementation
+	int prepared; 
+	int pattern_free;
+	int pattern_len;
+	char *pattern;
+	int ph_count; ///current element count in ph_names,ph_values,ph_names_l
+	int ph_bucket_count; ///currrent size of ph_names,ph_values,ph_names_l
+	char **ph_names;
+	char **ph_values;
+	int *ph_names_l; ///names lengths
+	int *ph_values_l; ///values lengths
+	
+	int max_name_l;
+	int max_value_l;
+
+	int *ph_order;
+	int *ph_offset;
+	int ph_order_count; ///current element count in ph_order, ph_offset
+	
+	int bucket_size; ///incremetntal step for ph_bucket_count
+	int bucket_size_order; ///incremetntal step for ph_order_count
+	char delimiter; ///placeholder delimiter
+} phctx_t;
+
+
+///initialize a replace_ph context
+phctx_t * str_replace_ph_init ( 
+	int bucket_size, ///expected placeholders count
+	int bucket_size_order, ///expected placeholders accurances in pattern
+	char delimiter, ///place holder delimiter
+	malloc_ft*use_malloc/*=NULL*/, ///use this malloc implementation NULL for default
+	free_ft* use_free/*=NULL*/ ///use this free implementation NULL for default
+);
+
+///clear placeholders data
+void str_replace_ph_reset_ph( phctx_t *ctx );
+
+///free replace_ph context
+void str_replace_ph_free ( phctx_t *ctx);
+
+///add/set a place holder and a value for it
+int str_replace_ph_set_ph (
+	phctx_t *ctx, ///context
+	char *ph_name, ///placeholder name
+	int ph_nlen/*=-1*/, /// place holder name length if known else -1 
+	char *ph_value/*=NULL*/, ///place hoder value if known
+	int ph_vlen/*=-1*/  /// place holder value length if known else -1
+);
+
+///removed a place holder and a value for it
+int str_replace_ph_remove_ph (
+	phctx_t *ctx, ///context
+	char *ph_name, ///placeholder name
+	int ph_nlen/*=-1*/  /// place holder name length if known else -1 
+);
+
+///add a pattern to context
+int  str_replace_ph_config_pattern(
+	phctx_t *ctx, ///context to change
+	char *pattern, ///pattern to add asciiZ
+	int copy, ///copy(1) data or just use(0) the pointer 
+	int plen/*=-1*/ ///data len if known -1 to autofindout
+);
+
+///simple search-and-replace replace first found
 int str_replace_single (const char *haystack,const char *needle,const char *changeto, char* dst , int dstmaxlen, int hslen, int nlen, int chtolen);
+///simple search-and-replace replace all found - based on str_replace_single()
 int str_replace_multiple (const char *haystack,const char *needle,const char *changeto, char* dst , int dstmaxlen, int hslen, int nlen, int chtolen);
 
 #ifdef  __cplusplus
