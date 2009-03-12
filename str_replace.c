@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 
-phctx_t * str_replace_ph_init (int bucket_size,int bucket_size_order, char delimiter, malloc_ft*use_malloc/*=NULL*/,free_ft* use_free/*=NULL*/) {
+phctx_t * str_replace_ph_init (int bucket_names,int bucket_order, char delimiter, malloc_ft*use_malloc/*=NULL*/,free_ft* use_free/*=NULL*/) {
 	if (use_malloc==NULL) use_malloc=malloc;
 	if (use_free==NULL) use_free=free;
 	
@@ -37,13 +37,14 @@ phctx_t * str_replace_ph_init (int bucket_size,int bucket_size_order, char delim
 	if (!ctx) return ctx; /// @return NULL on failure
 	
 	memset (ctx,0,sizeof(phctx_t));
-	ctx->bucket_size_order=bucket_size_order;
-	ctx->bucket_size=bucket_size;
+	ctx->bucket_names=bucket_names;
+	ctx->bucket_order=bucket_order;
 	ctx->delimiter=delimiter;
 	ctx->malloc=use_malloc;
 	ctx->free=use_free;
-	if (ctx->bucket_size<0) ctx->bucket_size_order=10;
-	if (ctx->bucket_size_order<0) ctx->bucket_size_order=30;
+	//oh! the sanity!
+	if (ctx->bucket_names<0) ctx->bucket_names=10;
+	if (ctx->bucket_order<ctx->bucket_names) ctx->bucket_order=3*ctx->bucket_names;
 	return ctx; /// @return newly allocated phctx_t * if all ok 
 }
 
@@ -68,11 +69,11 @@ void str_replace_ph_free (phctx_t *ctx){
 		ctx->pattern=NULL;
 	}
 	if (ctx->ph_names) {
-		str_replace_ph_clean_charpp (fr,ctx->ph_names,ctx->ph_count);
+		str_replace_ph_clean_charpp (fr,ctx->ph_names,ctx->ph_names_count);
 		fr(ctx->ph_names);
 	}
 	if (ctx->ph_values) {
-		str_replace_ph_clean_charpp (fr,ctx->ph_values,ctx->ph_count);
+		str_replace_ph_clean_charpp (fr,ctx->ph_values,ctx->ph_names_count);
 		fr(ctx->ph_values);
 	}
 	if (ctx->ph_names_l) fr(ctx->ph_names_l);
@@ -84,19 +85,18 @@ void str_replace_ph_free (phctx_t *ctx){
 void str_replace_ph_reset_ph( phctx_t *ctx ){
 	if (!ctx) return;
 	ctx->prepared=0;
-	ctx->ph_count=0;
-	ctx->ph_order_count=0;
 	if (ctx->ph_names) {
-		str_replace_ph_clean_charpp (ctx->free,ctx->ph_names,ctx->ph_count);
+		str_replace_ph_clean_charpp (ctx->free,ctx->ph_names,ctx->ph_names_count);
 	}
 	if (ctx->ph_values) {
-		str_replace_ph_clean_charpp (ctx->free,ctx->ph_values,ctx->ph_count);
+		str_replace_ph_clean_charpp (ctx->free,ctx->ph_values,ctx->ph_names_count);
 	}
-
+	ctx->ph_names_count=0;
+	ctx->ph_order_count=0;
 }
 
 int  str_replace_ph_config_pattern(phctx_t *ctx,char *pattern,int copy,int plen/*=-1*/){
-	if (!ctx) return 0; /// @return 0 on failure
+	if (!ctx||!pattern) return 0; /// @return 0 on failure
 	if (plen<0) plen=strlen(pattern);
 	ctx->prepared=0;
 	if (ctx->pattern && ctx->pattern_free) ctx->free(ctx->pattern);
@@ -105,7 +105,8 @@ int  str_replace_ph_config_pattern(phctx_t *ctx,char *pattern,int copy,int plen/
 		ctx->pattern_free=1;
 		ctx->pattern=ctx->malloc(plen+1); //keep it asciiZ
 		if (ctx->pattern) { //got memory
-			memcpy (ctx->pattern,pattern,plen+1); //keep it asciiZ
+			memcpy (ctx->pattern,pattern,plen); //keep it asciiZ
+			ctx->pattern[plen]=0;
 		} else { //nt enough memory :(
 			ctx->pattern_free=0;
 			return 0;
@@ -129,9 +130,8 @@ int str_replace_ph_set_ph (
 	if (!ctx || !ph_name) return 0; ///@return 0 on failure
 	if (ph_nlen<0) ph_nlen=strlen (ph_name);
 	
-	int x=0,idx=-1,first_free=-1;
-	for (;x<ctx->ph_count;x++) {
-		if (first_free==-1 && ctx->ph_names[x]==NULL) first_free=x;
+	int x=0,idx=-1;
+	for (;x<ctx->ph_names_count;x++) {
 		if (
 			ctx->ph_names[x]
 			&& ph_nlen==ctx->ph_names_l[x] 
@@ -144,8 +144,8 @@ int str_replace_ph_set_ph (
 	
 	if (idx==-1) { //new placeholder!
 		ctx->prepared=0; //need to re-prepare!
-		if (first_free==-1){ //no space left GROW!
-			int new_count=ctx->ph_bucket_count+ctx->bucket_size;
+		if (ctx->ph_names_count>=ctx->ph_names_size){ //no space left GROW!
+			int new_count=ctx->ph_names_size+ctx->bucket_names;
 			int new_psize=new_count*sizeof(void *);
 			int new_isize=new_count*sizeof(int);
 			
@@ -164,44 +164,50 @@ int str_replace_ph_set_ph (
 			memset (new_names_l,0,new_isize);
 			memset (new_values_l,0,new_isize);
 			
-			if (ctx->ph_bucket_count>0) {
-				int old_psize=ctx->ph_bucket_count*sizeof(void *);
-				int old_isize=ctx->ph_bucket_count*sizeof(int);
+			if (ctx->ph_names_size>0) {
+				int old_psize=ctx->ph_names_size*sizeof(void *);
+				int old_isize=ctx->ph_names_size*sizeof(int);
 				memcpy (new_names,ctx->ph_names,old_psize);
 				memcpy (new_values,ctx->ph_values,old_psize);
 				memcpy (new_names_l,ctx->ph_names_l,old_isize);
 				memcpy (new_values_l,ctx->ph_values_l,old_isize);
+				ctx->free(ctx->ph_names);
+				ctx->free(ctx->ph_values);
+				ctx->free(ctx->ph_names_l);
+				ctx->free(ctx->ph_values_l);
 			}
-			if (ctx->ph_names) ctx->free(ctx->ph_names);
-			if (ctx->ph_values) ctx->free(ctx->ph_values);
-			if (ctx->ph_names_l) ctx->free(ctx->ph_names_l);
-			if (ctx->ph_values_l) ctx->free(ctx->ph_values_l);
 			ctx->ph_names=new_names;
 			ctx->ph_values=new_values;
 			ctx->ph_names_l=new_names_l;
 			ctx->ph_values_l=new_values_l;
 			
-			idx=ctx->ph_bucket_count;
+			idx=ctx->ph_names_size;
 			
-			ctx->ph_bucket_count=new_count;
-		} else idx=first_free;
+			ctx->ph_names_size=new_count;
+		} else {
+			idx=ctx->ph_names_count;
+		}
+		ctx->ph_names_count++;
 		//copy ph_name
-		ctx->ph_values[idx]=ctx->malloc(ph_nlen+1);
-		if (!ctx->ph_values[idx]) return 0;
-		memcpy (ctx->ph_values[idx],ph_name,ph_nlen+1);//copy asciiz
-		ctx->ph_values_l[idx]=ph_nlen;
+		ctx->ph_names[idx]=ctx->malloc(ph_nlen+1);
+		if (!ctx->ph_names[idx]) return 0;
+		memcpy (ctx->ph_names[idx],ph_name,ph_nlen);
+		ctx->ph_names_l[idx]=ph_nlen;
+		ctx->ph_names[idx][ph_nlen]=0; //keep asciiZ
 		if (ph_nlen>ctx->max_name_l) ctx->max_name_l=ph_nlen;
 	}
 	//copy ph_value
 	if (ph_value) { //got data to copy
 		if (ph_vlen<0) ph_vlen=strlen (ph_value);
-		if (ph_vlen>ctx->ph_values_l[idx]){ //we need to reallocate..
+		if (ctx->ph_values[idx]==NULL || ph_vlen>ctx->ph_values_l[idx]){ //we need to (re)allocate..
+			ctx->ph_values_l[idx]=ph_vlen;
 			if (ctx->ph_values[idx]) ctx->free (ctx->ph_values[idx]);
 			ctx->ph_values[idx]=ctx->malloc (ph_vlen+1);
+			if (!ctx->ph_values[idx]) return 0; //can't malloc
 			if (ph_vlen>ctx->max_value_l) ctx->max_value_l=ph_vlen;
 		}
-		memcpy (ctx->ph_values[idx],ph_value,ph_vlen+1);
-		ctx->ph_values_l[idx]=ph_vlen;
+		memcpy (ctx->ph_values[idx],ph_value,ph_vlen);
+		ctx->ph_values[idx][ph_vlen]=0;//keep asciiZ
 	} else { //no data to copy just free
 		if (ctx->ph_values[idx]) ctx->free(ctx->ph_values[idx]);
 		ctx->ph_values[idx]=NULL;
@@ -215,12 +221,12 @@ int str_replace_ph_remove_ph (
 	char *ph_name,
 	int ph_nlen/*=-1*/
 ){
-	if (!ctx || ctx->ph_count==0) return 0; ///@return 0 on failure
+	if (!ctx || ctx->ph_names_count==0) return 0; ///@return 0 on failure
 	
 	if (ph_nlen<0) ph_nlen=strlen (ph_name);
 	
 	int x=0,idx=-1;
-	for (;x<ctx->ph_count;x++) {
+	for (;x<ctx->ph_names_count;x++) {
 		if (
 			ctx->ph_names[x]
 			&& ph_nlen==ctx->ph_names_l[x] 
@@ -235,18 +241,110 @@ int str_replace_ph_remove_ph (
 	if (ctx->ph_values[idx]) ctx->free(ctx->ph_values[idx]);
 	ctx->ph_names[idx]=NULL;
 	ctx->ph_values[idx]=NULL;
-	ctx->ph_count--;
+	
+	ctx->ph_values_l[idx]=0;
+	ctx->ph_names_l[idx]=0;
+	
+	ctx->prepared=0;
+	
+	ctx->ph_names_count--;
+	if (ctx->ph_names_count>0 && idx<ctx->ph_names_count) { //fill the gap
+		ctx->ph_names[idx]=ctx->ph_names[ctx->ph_names_count];
+		ctx->ph_values_l[idx]=ctx->ph_names_l[ctx->ph_names_count];
+		ctx->ph_values[idx]=ctx->ph_values[ctx->ph_names_count];
+		ctx->ph_names_l[idx]=ctx->ph_values_l[ctx->ph_names_count];
+	}
 	return 1; /// @return 1 on all OK
 }
 
 
 int str_replace_ph_prepare (phctx_t *ctx){
-	if (!ctx) return 0; ///@return 0 on failure
+	if (!ctx|| !ctx->pattern) return 0; ///@return 0 on failure
+	if (ctx->ph_names_count==0){ //nothing to prepare
+		ctx->prepared=1;
+		return 1;
+	}
+	ctx->ph_order_count=0;
+	ctx->prepared=0;
 	
+	char *pattern=ctx->pattern;
+	int pattern_len=ctx->pattern_len;
+	int ci=0;
+	char delimiter=ctx->delimiter;
+	char cc;
+	int in_ph=0;
+	int max_name_l=ctx->max_name_l;
+	int cph_sz=0;
+	int cph_ofs=0;
+	int idx,x;
+	int ph_names_count=ctx->ph_names_count;
+	while (ci<pattern_len){
+		cc=pattern[ci];
+		if (cc==delimiter){
+			if (in_ph){ //detected ph end
+				in_ph=0;
+				cph_sz++;
+				idx=-1;
+				for (x=0;x<ph_names_count;x++) if (cph_sz==ctx->ph_names_l[x] && memcmp(&pattern[cph_ofs],ctx->ph_names[x],cph_sz)==0){
+					idx=x;
+					break;
+				}
+				if (idx!=-1) { //got valid ph - register it to ph_order/ph_offset
+					if (ctx->ph_order_count>=ctx->ph_order_size){ //no space left GROW
+						int new_count=ctx->ph_order_size+ctx->bucket_order;
+						int new_isize=new_count*sizeof(int);
+												
+						int *new_order=ctx->malloc(new_isize);
+						int *new_offset=ctx->malloc(new_isize);
+						
+						if (!new_order || !new_offset ) {
+							return 0; //can't malloc!
+						}
+						
+						if (ctx->ph_order_count>0) {
+							int old_isize=ctx->ph_order_size*sizeof(int);
+							memcpy (new_order,ctx->ph_order,old_isize);
+							memcpy (new_offset,ctx->ph_offset,old_isize);
+							ctx->free(ctx->ph_order);
+							ctx->free(ctx->ph_offset);
+						}
+						ctx->ph_order=new_order;
+						ctx->ph_offset=new_offset;
+						ctx->ph_order_size=new_count;
+					}
+					ctx->ph_order[ctx->ph_order_count]=idx;
+					ctx->ph_offset[ctx->ph_order_count]=cph_ofs;
+					ctx->ph_order_count++;
+				} else { //invalid ph try starting a newone from this delimiter
+					cph_ofs=ci;
+					in_ph=1;
+					cph_sz=0;//will become 1 down there..
+				}
+			} else { //detected ph start
+				cph_ofs=ci;
+				in_ph=1;
+				cph_sz=0;//will become 1 down there..
+			}
+		}
+		if (in_ph) {
+			cph_sz++;
+			if (cph_sz>=max_name_l){ //abort placeholder - current ph is longer than any declared ph
+				in_ph=0;
+			}
+		}
+		ci++;
+	}
+	ctx->prepared=1;
 	return 1; /// @return 1 on all OK
 }
 
-
+int str_replace_ph_subst_maxsize (phctx_t *ctx) {
+	if (!ctx || !ctx->pattern) return 0; ///@return 0 on invalid ctx
+	int res=1;
+	if (!ctx->prepared) res=str_replace_ph_prepare (ctx);
+	if (res==0 || !ctx->prepared) return 0;
+	return ctx->pattern_len+(ctx->ph_order_count*ctx->max_value_l)+1; //this is wide enough even if all replacements are done with longest value
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////

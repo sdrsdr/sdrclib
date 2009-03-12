@@ -48,8 +48,8 @@ typedef struct {
 	int pattern_free;
 	int pattern_len;
 	char *pattern;
-	int ph_count; ///current element count in ph_names,ph_values,ph_names_l
-	int ph_bucket_count; ///currrent size of ph_names,ph_values,ph_names_l
+	int ph_names_count; ///current element count in ph_names,ph_values,ph_names_l
+	int ph_names_size; ///currrent size of ph_names,ph_values,ph_names_l
 	char **ph_names;
 	char **ph_values;
 	int *ph_names_l; ///names lengths
@@ -58,20 +58,21 @@ typedef struct {
 	int max_name_l;
 	int max_value_l;
 
+	int ph_order_count; ///current element count in ph_order, ph_offset
+	int ph_order_size; ///current size of ph_order, ph_offset
 	int *ph_order;
 	int *ph_offset;
-	int ph_order_count; ///current element count in ph_order, ph_offset
 	
-	int bucket_size; ///incremetntal step for ph_bucket_count
-	int bucket_size_order; ///incremetntal step for ph_order_count
+	int bucket_names; ///incremetntal step for ph_names_size
+	int bucket_order; ///incremetntal step for ph_order_size
 	char delimiter; ///placeholder delimiter
 } phctx_t;
 
 
 ///initialize a replace_ph context
 phctx_t * str_replace_ph_init ( 
-	int bucket_size, ///expected placeholders count
-	int bucket_size_order, ///expected placeholders accurances in pattern
+	int bucket_names, ///expected placeholders count
+	int bucket_order, ///expected placeholders occurrences in pattern
 	char delimiter, ///place holder delimiter
 	malloc_ft*use_malloc/*=NULL*/, ///use this malloc implementation NULL for default
 	free_ft* use_free/*=NULL*/ ///use this free implementation NULL for default
@@ -105,6 +106,19 @@ int  str_replace_ph_config_pattern(
 	char *pattern, ///pattern to add asciiZ
 	int copy, ///copy(1) data or just use(0) the pointer 
 	int plen/*=-1*/ ///data len if known -1 to autofindout
+);
+
+///prepare context for susbstitutions. e.g. find placeholders in pattern
+int str_replace_ph_prepare (phctx_t *ctx);
+
+///fid maximal destionation size with given pattern and placeholders. This will automaticaly call str_replace_ph_prepare() if needed
+int str_replace_ph_subst_maxsize (phctx_t *ctx);
+
+///make the substitutions in current pattern with current placeholders. This will automaticaly call str_replace_ph_prepare() if needed
+int str_replace_ph_subst (
+	phctx_t *ctx,
+	char *dst, ///where to store result
+	int dstmaxlen ///space availible in dst
 );
 
 ///simple search-and-replace replace first found
