@@ -16,11 +16,10 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
- /** \file str_replace.example.c
+ /** \file
       \brief String replacement functions (example)
 	  \author Stoian Ivanov sdr@tera-com.com
   */
-
 
 
 #include "str_replace.h"
@@ -54,7 +53,12 @@ void dump_ctx(phctx_t* ctx, char *msg){
 
 
 
-#define PATTERN "$deco$this $is$ a $inv$test$ that $$is$ testing a pattern replacement$deco$"
+#define PATTERN "ttt$deco$this $is$ a $inv$test$ that $$is$ testing a pattern replacement$deco$ttt"
+#define PATTERN2 "111$deco$2222"
+#define PATTERN3 "$deco$2222"
+#define PATTERN4 "111$deco$"
+#define PATTERN5 "$deco$"
+#define PATTERN6 "test"
 
 int main () {
 	phctx_t* ctx=str_replace_ph_init(3,5,'$',NULL,NULL);//3 place holders 5 occurances

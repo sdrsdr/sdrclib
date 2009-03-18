@@ -21,7 +21,7 @@
 #define str_replace_h_SDR_321234msdaa_included
 
 
- /** \file str_replace.h
+ /** \file
       \brief String replacement functions.
       \author Stoian Ivanov sdr@tera-com.com
       \example str_replace.example.c
@@ -117,7 +117,7 @@ int str_replace_ph_subst_maxsize (phctx_t *ctx);
 ///make the substitutions in current pattern with current placeholders. This will automaticaly call str_replace_ph_prepare() if needed
 int str_replace_ph_subst (
 	phctx_t *ctx,
-	char *dst, ///where to store result
+	char *dst, ///where to store result plus a terminateig 0
 	int dstmaxlen ///space availible in dst
 );
 

@@ -16,7 +16,7 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
- /** \file str_replace.c
+ /** \file
       \brief String replacement functions (implementation).
 	  \author Stoian Ivanov sdr@tera-com.com
   */
@@ -339,11 +339,61 @@ int str_replace_ph_prepare (phctx_t *ctx){
 }
 
 int str_replace_ph_subst_maxsize (phctx_t *ctx) {
-	if (!ctx || !ctx->pattern) return 0; ///@return 0 on invalid ctx
+	if (!ctx || !ctx->pattern) return 0; ///@return 0 on invalid ctx or aproximate size guaranteed to fit susbstituted data with current placeholders
 	int res=1;
 	if (!ctx->prepared) res=str_replace_ph_prepare (ctx);
 	if (res==0 || !ctx->prepared) return 0;
 	return ctx->pattern_len+(ctx->ph_order_count*ctx->max_value_l)+1; //this is wide enough even if all replacements are done with longest value
+}
+
+/// @warning this uses memcpy so pattern and destination should not ovrlap
+int str_replace_ph_subst (
+	phctx_t *ctx,
+	char *dst,
+	int dstmaxlen
+){
+	if (!ctx || !ctx->pattern || !dst || dstmaxlen==0) return 0; ///@return 0 failure
+	int res=1;
+	if (!ctx->prepared) res=str_replace_ph_prepare (ctx);
+	if (res==0 || !ctx->prepared) return 0;
+	if (ctx->ph_order_count==0) { //no placeholders
+		if (dstmaxlen>ctx->pattern_len) { //we need +1 for asciiZ
+			memmove (dst,ctx->pattern,ctx->pattern_len+1); //be safe use memmove
+			return ctx->pattern_len;
+		} else return -1; ///@return -1 on unsufficient dstmaxlen
+	}
+	
+	char *dsti=dst;
+	char *pattern=ctx->pattern;
+	int pattern_len=ctx->pattern_len;
+	int pidx=0;
+	int szout=0;
+	int oidx=0;
+	int next_ofs=ctx->ph_offset[oidx];
+	int next_ph=ctx->ph_order[oidx];
+	int cpyl;
+	while (pidx<pattern_len && dstmaxlen>0) {
+		if (pidx==next_ofs){ //ph copy
+			cpyl=ctx->ph_values_l[next_ph];
+			if (dstmaxlen<=cpyl) return -1;
+			memcpy (dsti,ctx->ph_values[next_ph],cpyl);
+			dsti+=cpyl; pidx+=ctx->ph_names_l[next_ph]; szout+=cpyl; dstmaxlen-=cpyl;
+			oidx++;
+			if (oidx>=ctx->ph_order_count) { //this was the last placeholder
+				next_ofs=pattern_len;
+			} else {
+				next_ofs=ctx->ph_offset[oidx];
+				next_ph=ctx->ph_order[oidx];
+			}
+		} else { //pattern copy
+			cpyl=next_ofs-pidx;
+			if (dstmaxlen<=cpyl) return -1;
+			memcpy (dsti,pattern+pidx,cpyl);
+			dsti+=cpyl; pidx+=cpyl; szout+=cpyl; dstmaxlen-=cpyl;
+		}
+	}
+	dst[szout]=0;
+	return szout;
 }
 
 
