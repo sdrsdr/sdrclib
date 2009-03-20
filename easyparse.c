@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "easyparse.h"
 
@@ -36,6 +35,7 @@ int easyparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
 	char *cls=buf;
 	int firsteq=0;
 	int firstlt=0;
+	int res=0;
 	char *datastart=NULL;
 	int datal=0;
 	char *dname=NULL;
@@ -133,7 +133,7 @@ int easyparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
 				if (trimend>0){
 					valuel-=trimend;
 				}
-				callback (userdata,name,namel,value,valuel);
+				if ((res=callback (userdata,name,namel,value,valuel))!=0) return res;
 				
 				//===NEXT LINE==
 				cls+=cidx+1;
@@ -219,7 +219,7 @@ int easyparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
 				if (trimmidl>0) trlinel-=trimmidl;
 				
 				if (trlinel==dterml && memcmp(trline,dterm,dterml)==0) { //terminator found!
-					callback (userdata,dname,dnamel,datastart,datal);
+					if ((res=callback (userdata,dname,dnamel,datastart,datal))!=0) return res;
 					
 					//===NEXT LINE==
 					cls+=cidx+1;
@@ -274,7 +274,5 @@ int easyparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
 			cidx++;
 		}
 	}
-	//TODO:
-	//callback (userdata,"test",4,"12345",5);
-	return 0;
+	return res;
 }

@@ -47,6 +47,7 @@ more=values"
 
 int easyparse_cb (void*userdata,  char *name, int namel, char *value, int valuel){
 	printf ("name:[%.*s] value:[%.*s]\n",namel,name,valuel,value);
+	return 0;
 }
 
 int main () {
