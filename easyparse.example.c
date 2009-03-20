@@ -22,18 +22,20 @@
   */
 
 
-#define TESTCONFG1 "\
-test=mest\n\
+#define TESTCONFG "\
+ test = mest\n\
 \n\
-opa<tropa\n\
-multi\n\
-line\n\
-tropa\n\
+ opa <  tropa\n\
+multi1\n\
+line2\n\
+line3\n\
+line4\n\
+ tropa \n\
 #comment\n\
 more=values"
 
 
-#define TESTCONFG  "\
+#define TESTCONFG1  "\
  test   =  mest  \n\
   #komentirame\n\
  more = values  \n"

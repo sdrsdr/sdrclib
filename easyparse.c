@@ -38,6 +38,8 @@ int easyparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
 	int firstlt=0;
 	char *datastart=NULL;
 	int datal=0;
+	char *dname=NULL;
+	int dnamel=0;
 	
 	char *dterm=NULL;
 	int dterml=0;
@@ -152,15 +154,15 @@ int easyparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
 				//===============
 				continue;
 			} else if (mode==3){ //name<term
-				char * name=cls;
-				int namel=firsteq;
+				dname=cls;
+				dnamel=firstlt;
 				if (trimstart>0) {
-					name+=trimstart;
-					namel-=trimstart;
+					dname+=trimstart;
+					dnamel-=trimstart;
 				}
-				if (trimmidl>0) namel-=trimmidl;
-				dterm=cls+firsteq+1;
-				dterml=cidx-firsteq-1;
+				if (trimmidl>0) dnamel-=trimmidl;
+				dterm=cls+firstlt+1;
+				dterml=cidx-firstlt-1;
 				if (trimmidr>0){
 					dterm+=trimmidr;
 					dterml-=trimmidr;
@@ -187,7 +189,6 @@ int easyparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
 					dterm=NULL;
 					dterml=0;
 					//===============
-				
 				} else { //valid terminator
 					//===NEXT LINE==
 					cls+=cidx+1;
@@ -209,32 +210,51 @@ int easyparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
 				}
 				continue;
 			} else { //data
-				char * name=cls;
-				int namel=cidx;
+				char * trline=cls;
+				int trlinel=cidx;
 				if (trimstart>0) {
-					name+=trimstart;
-					namel-=trimstart;
+					trline+=trimstart;
+					trlinel-=trimstart;
 				}
-				if (trimmidl>0) namel-=trimmidl;
+				if (trimmidl>0) trlinel-=trimmidl;
 				
-				
-				//===NEXT LINE==
-				cls+=cidx+1;
-				bleft-=cidx+1;
-				cidx=0;
-				mode=4; //new mode
-				firsteq=0;
-				firstlt=0;
-				cwsrun=0;
-				trimstart=-1;
-				trimend=-1;
-				trimmidl=-1;
-				trimmidr=-1;
-				datastart=cls; //set data start
-				datal=0;  //set initial datal
-				//dterm=NULL; //dterm preserved from mode 3 to 4 
-				//dterml=0; //dterml preserved from mode 3 to 4 
-				//===============
+				if (trlinel==dterml && memcmp(trline,dterm,dterml)==0) { //terminator found!
+					callback (userdata,dname,dnamel,datastart,datal);
+					
+					//===NEXT LINE==
+					cls+=cidx+1;
+					bleft-=cidx+1;
+					cidx=0;
+					mode=0;
+					firsteq=0;
+					firstlt=0;
+					cwsrun=0;
+					trimstart=-1;
+					trimend=-1;
+					trimmidl=-1;
+					trimmidr=-1;
+					datastart=NULL;
+					datal=0;
+					dterm=NULL;
+					dterml=0;
+					//===============
+					continue;
+				} else {
+					datal+=cidx+1;
+					//===NEXT LINE==
+					cls+=cidx+1;
+					bleft-=cidx+1;
+					cidx=0;
+					
+					firsteq=0;
+					firstlt=0;
+					cwsrun=0;
+					trimstart=-1;
+					trimend=-1;
+					trimmidl=-1;
+					trimmidr=-1;
+					//===============
+				}
 			}
 		} else { //advance
 			if (mode==0 ||  mode==2 || mode==3) { //unknown or name=val  or name<term
