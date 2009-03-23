@@ -216,6 +216,47 @@ int str_replace_ph_set_ph (
 	return 1; /// @return 1 on all OK
 }
 
+///@warning no memory management is done
+int str_replace_ph_set_ph_uv (
+	phctx_t *ctx,
+	phctx_user_values_t *uv,
+	char *ph_name,
+	int ph_nlen/*=-1*/,
+	char *ph_value/*=NULL*/,
+	int ph_vlen/*=-1*/,
+	char **oldvalue/*=NULL*/
+){
+	///both name and value are copied into the ctx
+	if (!ctx || !ph_name || !uv) return 0; ///@return -1 on failure
+	if (ph_nlen<0) ph_nlen=strlen (ph_name);
+	
+	int x=0,idx=-1;
+	for (;x<ctx->ph_names_count;x++) {
+		if (
+			ctx->ph_names[x]
+			&& ph_nlen==ctx->ph_names_l[x] 
+			&& memcmp(ctx->ph_names[x],ph_name,ph_nlen)==0
+		) {
+			idx=x;
+			break;
+		}
+	}
+	
+	if (idx==-1) { //new placeholder!
+		return 0; ///@return -1 on failure 
+	}
+	if (oldvalue) *oldvalue=uv->ph_values[idx];
+
+	if (ph_value) { //got data to copy
+		uv->ph_values[idx]=ph_value;
+		uv->ph_values_l[idx]=ph_vlen;
+	} else { //no data to copy mark free
+		uv->ph_values[idx]=NULL;
+		uv->ph_values_l[idx]=0;
+	}
+	return idx; /// @return idx of set value on all OK
+}
+
 int str_replace_ph_remove_ph (
 	phctx_t *ctx,
 	char *ph_name,
@@ -345,6 +386,60 @@ int str_replace_ph_subst_maxsize (phctx_t *ctx) {
 	if (res==0 || !ctx->prepared) return 0;
 	return ctx->pattern_len+(ctx->ph_order_count*ctx->max_value_l)+1; //this is wide enough even if all replacements are done with longest value
 }
+
+///@warning this uses a single memory block for the arrays and the struct itself
+phctx_user_values_t * str_replace_ph_init_uv (phctx_t *ctx) {
+	if (!ctx || ctx->ph_names_count==0) return NULL;
+	int bsize=sizeof(phctx_user_values_t)+ctx->ph_names_count*(sizeof(void *)+sizeof(int));
+	phctx_user_values_t *res=ctx->malloc(bsize);
+	if (!res) return NULL;
+	memset (res,0,bsize);
+	char *p=(char *)res;
+	p+=sizeof(phctx_user_values_t);
+	res->ph_values=(char **)p;
+	p+=ctx->ph_names_count*sizeof(void *);
+	res->ph_values_l=(int *)p;
+	return res;
+}
+
+///free phctx_user_values
+void str_replace_ph_free_uv (phctx_t *ctx, phctx_user_values_t *uv) {
+	if (ctx && uv) ctx->free (uv);
+}
+
+
+/// @warning this temporeraly modifies ctx and calls str_replace_ph_subst making it thread safe is up to you!
+int str_replace_ph_subst_user (
+	phctx_t *ctx,
+	char **user_ph_values, ///values to use
+	int *user_ph_values_l, ///values lengths to use
+	char *dst, ///where to store result plus a terminateig 0
+	int dstmaxlen ///space availible in dst
+) {
+	if (!ctx || !ctx->pattern || !dst || dstmaxlen==0) return 0; ///@return 0 failure
+	char ** old_v=ctx->ph_values;
+	int *old_vl=ctx->ph_values_l;
+	
+	ctx->ph_values=user_ph_values;
+	ctx->ph_values_l=user_ph_values_l;
+	
+	int res=str_replace_ph_subst (ctx,dst,dstmaxlen);
+	
+	ctx->ph_values=old_v;
+	ctx->ph_values_l=old_vl;
+	
+	return res; ///@return result of str_replace_ph_subst call
+}
+
+int str_replace_ph_subst_uv (
+	phctx_t *ctx,
+	phctx_user_values_t *uv, ///values lengths to use
+	char *dst, ///where to store result plus a terminateig 0
+	int dstmaxlen ///space availible in dst
+) {
+	return str_replace_ph_subst_user (ctx,uv->ph_values,uv->ph_values_l,dst,dstmaxlen);
+}
+
 
 /// @warning this uses memcpy so pattern and destination should not ovrlap
 int str_replace_ph_subst (
