@@ -29,6 +29,7 @@
 #include "easyparse.h"
 
 int easyparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
+	///@return 0 on all ok or result of callback if callback returns non 0; if no buf or no callback return -1
 	if (!callback) return -1;
 	if (bufl<0) bufl=strlen(buf);
 	if (bufl==0) return -1;
@@ -275,4 +276,76 @@ int easyparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
 		}
 	}
 	return res;
+}
+
+int dumpparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
+	///@return 0 on all ok or result of callback if callback returns non 0; if no buf or no callback return -1
+	if (!callback) return -1;
+	if (bufl<0) bufl=strlen(buf);
+	if (bufl==0) return -1;
+	int mode=0;
+	int cidx=0;
+	char *name=NULL;
+	int namel=0;
+	char *value=NULL;
+	int valuel=0;
+
+	/*
+	 modes:
+	  0 - lws
+	  1 - name
+	  2 - value
+	*/
+	char c;
+	while (cidx<bufl) {
+		c=buf[cidx];
+		if (mode==0) {
+			if (c==' ' || c=='\r' || c=='\n' || c=='\t')  { //WS 
+				cidx++;
+				continue;
+			} else {
+				mode=1;
+				namel=0;
+				name=buf+cidx;
+				valuel=0;
+				value=NULL;
+			}
+		}
+		
+		if (mode==1) {
+			if (c=='=') {
+				mode=2;
+				cidx++;
+				valuel=0;
+				value=buf+cidx;
+				continue;
+			} else {
+				if (c==' ' || c=='\r' || c=='\n' || c=='\t'){ //this is not allowed here!
+					mode=0;
+					namel=0;
+					name=NULL;
+					valuel=0;
+					value=NULL;
+				} else namel++;
+				cidx++;
+				continue;
+			}
+		} else { // mode==2
+			if (c==' ' || c=='\r' || c=='\n' || c=='\t'){ //end of data
+				int res;
+				if ((res=callback (userdata,name,namel,value,valuel))!=0) return res;
+				mode=0;
+				namel=0;
+				name=NULL;
+				valuel=0;
+				value=NULL;
+			} else valuel++;
+			cidx++;
+			continue;
+		}
+	}
+	
+	if (mode==2) { //final value terminated by EOS
+		return callback (userdata,name,namel,value,valuel);
+	} else return mode;
 }

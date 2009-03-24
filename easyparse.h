@@ -30,9 +30,33 @@ extern "C" {
 ///easy parser callback retun  non 0 to stop parsing with error
 typedef int (easyparse_cb_t) (void*userdata,  char *name, int namel, char *value, int valuel);
 
-///the easy parser itself!
-int easyparse(char *buf,int bufl,easyparse_cb_t *callback, void*userdata);
+/**the easy parser 
+	line based white space trimmed where apropriate
+	accepts grama:
+\n
+name=value\n
+name\<terminator\n
+data\n
+data\n
+terminator\n
 
+*/
+int easyparse(
+	char *buf, ///data to parse
+	int bufl, ///length to parse (-1 will use strlen to findout)
+	easyparse_cb_t *callback, ///callback to invoke 
+	void*userdata ///aux data for callback
+	);
+
+/**the dump parser 
+	white space delimited name=value pairs. No white space allowed around =
+*/
+int dumpparse(
+	char *buf,///data to parse
+	int bufl,///length to parse (-1 will use strlen to findout)
+	easyparse_cb_t *callback,///callback to invoke 
+	void*userdata ///aux data for callback
+);
 #ifdef  __cplusplus
 }
 #endif
