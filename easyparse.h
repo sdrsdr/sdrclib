@@ -42,20 +42,20 @@ terminator\n
 
 */
 int easyparse(
-	char *buf, ///data to parse
-	int bufl, ///length to parse (-1 will use strlen to findout)
-	easyparse_cb_t *callback, ///callback to invoke 
-	void*userdata ///aux data for callback
+	char *buf, ///<data to parse
+	int bufl, ///<length to parse (-1 will use strlen to findout)
+	easyparse_cb_t *callback, ///<callback to invoke 
+	void*userdata ///<aux data for callback
 	);
 
 /**the dump parser 
 	white space delimited name=value pairs. No white space allowed around =
 */
-int dumpparse(
-	char *buf,///data to parse
-	int bufl,///length to parse (-1 will use strlen to findout)
-	easyparse_cb_t *callback,///callback to invoke 
-	void*userdata ///aux data for callback
+int dumbparse(
+	char *buf,///< data to parse
+	int bufl,///< length to parse (-1 will use strlen to findout)
+	easyparse_cb_t *callback,///<callback to invoke 
+	void*userdata ///<aux data for callback
 );
 #ifdef  __cplusplus
 }

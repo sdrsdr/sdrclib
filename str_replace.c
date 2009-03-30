@@ -226,7 +226,6 @@ int str_replace_ph_set_ph_uv (
 	int ph_vlen/*=-1*/,
 	char **oldvalue/*=NULL*/
 ){
-	///both name and value are copied into the ctx
 	if (!ctx || !ph_name || !uv) return 0; ///@return -1 on failure
 	if (ph_nlen<0) ph_nlen=strlen (ph_name);
 	
@@ -250,6 +249,7 @@ int str_replace_ph_set_ph_uv (
 	if (ph_value) { //got data to copy
 		uv->ph_values[idx]=ph_value;
 		uv->ph_values_l[idx]=ph_vlen;
+		if (ph_vlen>uv->max_value_l) uv->max_value_l=ph_vlen;
 	} else { //no data to copy mark free
 		uv->ph_values[idx]=NULL;
 		uv->ph_values_l[idx]=0;
@@ -377,6 +377,14 @@ int str_replace_ph_prepare (phctx_t *ctx){
 	}
 	ctx->prepared=1;
 	return 1; /// @return 1 on all OK
+}
+
+int str_replace_ph_subst_maxsize_uv (phctx_t *ctx,phctx_user_values_t *uv) {
+	if (!ctx || !uv || !ctx->pattern) return 0; ///@return 0 on invalid ctx or aproximate size guaranteed to fit susbstituted data with current placeholders
+	int res=1;
+	if (!ctx->prepared) res=str_replace_ph_prepare (ctx);
+	if (res==0 || !ctx->prepared) return 0;
+	return ctx->pattern_len+(ctx->ph_order_count*uv->max_value_l)+1; //this is wide enough even if all replacements are done with longest value
 }
 
 int str_replace_ph_subst_maxsize (phctx_t *ctx) {

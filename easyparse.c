@@ -278,7 +278,7 @@ int easyparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
 	return res;
 }
 
-int dumpparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
+int dumbparse(char *buf,int bufl,easyparse_cb_t *callback,void*userdata) {
 	///@return 0 on all ok or result of callback if callback returns non 0; if no buf or no callback return -1
 	if (!callback) return -1;
 	if (bufl<0) bufl=strlen(buf);
