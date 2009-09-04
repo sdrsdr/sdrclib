@@ -557,3 +557,22 @@ int str_replace_multiple (const char *haystack,const char *needle,const char *ch
 	if (hbuf!=NULL) free (hbuf);
 	return res;
 }
+
+int str_replace_add_slashes (char *from, int fromsz, char *to ){
+	///@return size of the to 
+	if (!from || !to) return 0;
+	if (fromsz<1) fromsz=strlen(from);
+	char *oto=to;
+	while (fromsz) {
+		fromsz--;
+		if (*from=='\''|| *from=='\\'|| *from=='"' || *from=='`') { 
+			*to='\\'; 
+			to++;
+		}
+		*to=*from; to++;from++;
+	}
+	*to=0;
+	return to-oto;
+}
+
+

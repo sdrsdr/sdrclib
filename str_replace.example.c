@@ -24,7 +24,7 @@
 
 #include "str_replace.h"
 #include <stdio.h>
-
+#include <string.h>
 
 void dump_ctx(phctx_t* ctx, char *msg){
 	int x=0;

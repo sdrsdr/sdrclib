@@ -173,6 +173,14 @@ int str_replace_single (const char *haystack,const char *needle,const char *chan
 ///simple search-and-replace replace all found - based on str_replace_single()
 int str_replace_multiple (const char *haystack,const char *needle,const char *changeto, char* dst , int dstmaxlen, int hslen, int nlen, int chtolen);
 
+///escapes quotes (`"') and slash with a slash good for mysql_real_escape_string() replacement dest must be 2*+1 size of original string 
+///no bound checking is done!
+int str_replace_add_slashes (
+	char *from, ///< where to read from 0
+	int fromsz, ///< size of from (if 0 strlen will be used)
+	char *to ///< where to store result plus a terminateig 0
+);
+
 #ifdef  __cplusplus
 }
 #endif
