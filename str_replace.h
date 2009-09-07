@@ -181,6 +181,14 @@ int str_replace_add_slashes (
 	char *to ///< where to store result plus a terminateig 0
 );
 
+
+///url decodes string + to space %xx to proper charecter replacement dest must be atleast the size of original string 
+///no bound checking is done!
+int str_replace_urldecode (
+	char *from, ///< where to read from 0
+	int fromsz, ///< size of from (if 0 strlen will be used)
+	char *to ///< where to store result plus a terminateig 0
+);
 #ifdef  __cplusplus
 }
 #endif

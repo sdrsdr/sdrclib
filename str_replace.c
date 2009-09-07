@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 phctx_t * str_replace_ph_init (int bucket_names,int bucket_order, char delimiter, malloc_ft*use_malloc/*=NULL*/,free_ft* use_free/*=NULL*/) {
 	if (use_malloc==NULL) use_malloc=malloc;
@@ -574,5 +575,54 @@ int str_replace_add_slashes (char *from, int fromsz, char *to ){
 	*to=0;
 	return to-oto;
 }
+
+
+int str_replace_tool_htoi(char *s)
+{
+	int value;
+	int c;
+ 
+	c = s[0];
+	if (isupper(c))
+		c = tolower(c);
+	value = (c >= '0' && c <= '9' ? c - '0' : c - 'a' + 10) * 16;
+ 
+	c = s[1];
+	if (isupper(c))
+		c = tolower(c);
+	value += c >= '0' && c <= '9' ? c - '0' : c - 'a' + 10;
+ 
+	return (value);
+}
+ 
+
+int str_replace_urldecode (char *from,int fromsz, char *to ){
+	///@return size of the to 
+	if (!from || !to) return 0;
+	if (fromsz<1) fromsz=strlen(from);
+
+	char *dest = to;
+	char *data = from;
+ 
+	while (fromsz--) {
+		if (*data == '+')
+			*dest = ' ';
+		else if (*data == '%' && fromsz >= 2 && isxdigit((int) *(data + 1)) && isxdigit((int) *(data + 2))) {
+			*dest = (char) str_replace_tool_htoi(data + 1);
+			data += 2;
+			fromsz -= 2;
+		} else
+			*dest = *data;
+ 
+		data++;
+		dest++;
+	}
+	*dest = '\0';
+	return dest - to;
+}
+
+
+
+
 
 

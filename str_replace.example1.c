@@ -17,7 +17,7 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
  /** \file
-      \brief String replacement functions (example@str_replace_add_slashes)
+      \brief String replacement functions (example of str_replace_add_slashes,str_replace_urldecode)
 	  \author Stoian Ivanov sdr@tera-com.com
   */
 
@@ -27,11 +27,13 @@
 #include <string.h>
 
 #define SRC "this \"  is \\ a ' test ` sz:%d\n"
-
+#define URDL "k+thid%20is+test%3D%3dok"
 int main () {
 	char buf [200];
 	printf (SRC,strlen(SRC));
 	int sz=str_replace_add_slashes (SRC,0,buf);
 	printf (buf,sz);
+	str_replace_urldecode (URDL,0,buf);
+	printf ("urle:%s\nurld:%s\n",URDL,buf);
 	
 }
