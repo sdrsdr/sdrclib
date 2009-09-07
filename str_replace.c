@@ -411,6 +411,18 @@ phctx_user_values_t * str_replace_ph_init_uv (phctx_t *ctx) {
 	return res;
 }
 
+///free phctx_user_values valuesdata
+void str_replace_ph_free_uv_valuesdata (phctx_t *ctx, phctx_user_values_t *uv) {
+	int x=0;
+	for (;x<ctx->ph_names_count;x++) {
+		if (uv->ph_values[x]) {
+			ctx->free (uv->ph_values[x]);
+			uv->ph_values[x]=NULL;
+		}
+	}
+}
+
+
 ///free phctx_user_values
 void str_replace_ph_free_uv (phctx_t *ctx, phctx_user_values_t *uv) {
 	if (ctx && uv) ctx->free (uv);

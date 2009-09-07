@@ -25,6 +25,7 @@
       \brief String replacement functions.
       \author Stoian Ivanov sdr@tera-com.com
       \example str_replace.example.c
+      \example str_replace.example1.c
   */
 
 
@@ -95,6 +96,10 @@ void str_replace_ph_reset_ph( phctx_t *ctx );
 
 ///free replace_ph context
 void str_replace_ph_free ( phctx_t *ctx);
+
+///free phctx_user_values valuesdata
+void str_replace_ph_free_uv_valuesdata (phctx_t *ctx, phctx_user_values_t *uv) ;
+
 
 ///free phctx_user_values
 void str_replace_ph_free_uv (phctx_t *ctx, phctx_user_values_t *uv);
