@@ -76,7 +76,23 @@ typedef struct {
 	int max_value_l;
 } phctx_user_values_t;
 
-///initialize a replace_ph context
+///name-value bundle structure
+///one memory block to hold em'all :)
+typedef struct {
+		
+	char **ph_names; 
+	char **ph_values;
+	int ph_names_count;
+	int *ph_names_l; 
+	int *ph_values_l; 
+
+	int max_name_l;
+	int max_value_l;
+
+} phctx_namevalue_bundle_t;
+
+
+///allocate and initialize a replace_ph context
 phctx_t * str_replace_ph_init ( 
 	int bucket_names, ///<expected placeholders count
 	int bucket_order, ///<expected placeholders occurrences in pattern
@@ -85,6 +101,17 @@ phctx_t * str_replace_ph_init (
 	free_ft* use_free/*=NULL*/ ///<use this free implementation NULL for default
 );
 
+///initialize a replace_ph context
+void str_replace_ph_init_static ( 
+	phctx_t * ctx,
+	int bucket_names, ///<expected placeholders count
+	int bucket_order, ///<expected placeholders occurrences in pattern
+	char delimiter, ///<place holder delimiter
+	malloc_ft*use_malloc/*=NULL*/, ///<use this malloc implementation NULL for default
+	free_ft* use_free/*=NULL*/ ///<use this free implementation NULL for default
+);
+							   
+							   
 
 ///initialize a phctx_user_values_t from a ctx having space just for the allready set placeholders
 phctx_user_values_t * str_replace_ph_init_uv (
@@ -94,7 +121,10 @@ phctx_user_values_t * str_replace_ph_init_uv (
 ///clear placeholders data
 void str_replace_ph_reset_ph( phctx_t *ctx );
 
-///free replace_ph context
+///deiinit replace_ph context used in str_replace_ph_free
+void str_replace_ph_deinit ( phctx_t *ctx);
+
+///deiinit and free replace_ph context memory
 void str_replace_ph_free ( phctx_t *ctx);
 
 ///free phctx_user_values valuesdata
@@ -124,7 +154,7 @@ int str_replace_ph_set_ph_uv (
 	char **oldvalue/*=NULL*/ ///< write return old value here if not NULL
 );
 
-///removed a place holder and a value for it
+///removews a place holder and its value 
 int str_replace_ph_remove_ph (
 	phctx_t *ctx, ///< context
 	char *ph_name, ///< placeholder name
@@ -172,6 +202,22 @@ int str_replace_ph_subst_uv (
 	char *dst, ///< where to store result plus a terminateig 0
 	int dstmaxlen ///< space availible in dst
 );
+
+///bundle a COPY of all name/values in a single memory block lead by phctx_namevalue_bundle_t struct
+phctx_namevalue_bundle_t* str_replace_ph_bundle (
+	phctx_t *ctx, 
+	phctx_user_values_t *uv ///< optional, might be NULL
+);
+
+///copy bundle name-values to context
+int str_replace_ph_import_bundle (phctx_t *ctx,phctx_namevalue_bundle_t* bundle);
+
+///crete uv based on ctx and bundle
+phctx_user_values_t * str_replace_ph_bundle2uv (phctx_t *ctx, phctx_namevalue_bundle_t * bundle, int ignoremissing);
+
+///free bundel in proper way
+void str_replace_ph_bundle_free (phctx_t *ctx,phctx_namevalue_bundle_t *bundle);
+	
 
 ///simple search-and-replace replace first found
 int str_replace_single (const char *haystack,const char *needle,const char *changeto, char* dst , int dstmaxlen, int hslen, int nlen, int chtolen);

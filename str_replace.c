@@ -37,6 +37,17 @@ phctx_t * str_replace_ph_init (int bucket_names,int bucket_order, char delimiter
 	phctx_t * ctx=use_malloc(sizeof(phctx_t));
 	if (!ctx) return ctx; /// @return NULL on failure
 	
+	str_replace_ph_init_static (ctx,bucket_names, bucket_order, delimiter, use_malloc,use_free);
+	
+	return ctx; /// @return newly allocated phctx_t * if all ok 
+}
+
+void str_replace_ph_init_static (phctx_t * ctx, int bucket_names, int bucket_order, char delimiter, malloc_ft*use_malloc/*=NULL*/, free_ft* use_free/*=NULL*/ ) {
+	if (!ctx) return;
+	
+	if (use_malloc==NULL) use_malloc=malloc;
+	if (use_free==NULL) use_free=free;
+	
 	memset (ctx,0,sizeof(phctx_t));
 	ctx->bucket_names=bucket_names;
 	ctx->bucket_order=bucket_order;
@@ -46,8 +57,11 @@ phctx_t * str_replace_ph_init (int bucket_names,int bucket_order, char delimiter
 	//oh! the sanity!
 	if (ctx->bucket_names<0) ctx->bucket_names=10;
 	if (ctx->bucket_order<ctx->bucket_names) ctx->bucket_order=3*ctx->bucket_names;
-	return ctx; /// @return newly allocated phctx_t * if all ok 
+	
 }
+
+
+
 
 void str_replace_ph_clean_charpp (free_ft *fr,char **arr, int count){
 	if (count==0 || !arr) return;
@@ -61,10 +75,9 @@ void str_replace_ph_clean_charpp (free_ft *fr,char **arr, int count){
 	}
 }
 
-void str_replace_ph_free (phctx_t *ctx){
+void str_replace_ph_deinit ( phctx_t *ctx) {
 	if (!ctx) return;
 	free_ft *fr=ctx->free;
-	
 	if (ctx->pattern && ctx->pattern_free) {
 		fr(ctx->pattern);
 		ctx->pattern=NULL;
@@ -80,6 +93,12 @@ void str_replace_ph_free (phctx_t *ctx){
 	if (ctx->ph_names_l) fr(ctx->ph_names_l);
 	if (ctx->ph_order) fr(ctx->ph_order);
 	if (ctx->ph_offset) fr(ctx->ph_offset);
+}
+
+void str_replace_ph_free (phctx_t *ctx){
+	if (!ctx) return;
+	free_ft *fr=ctx->free;
+	str_replace_ph_deinit (ctx);
 	fr (ctx);
 }
 
@@ -117,6 +136,28 @@ int  str_replace_ph_config_pattern(phctx_t *ctx,char *pattern,int copy,int plen/
 		ctx->pattern=pattern;
 	}
 	return 1; /// @return 1 if OK
+}
+
+int str_replace_ph_import_bundle (phctx_t *ctx,phctx_namevalue_bundle_t* bundle){
+	///@return 0 on failure 
+	/// @return 1 on all OK
+	int x;
+	for (x=0;x<bundle->ph_names_count;x++) if (str_replace_ph_set_ph(ctx,bundle->ph_names[x],bundle->ph_names_l[x],bundle->ph_values[x],bundle->ph_values_l[x])==0) return 0;
+	return 1;
+}
+
+phctx_user_values_t * str_replace_ph_bundle2uv (phctx_t *ctx,phctx_namevalue_bundle_t* bundle,int ignoremissing){
+	if (!ctx) return NULL; ///@return NULL on failure
+	phctx_user_values_t *uv=str_replace_ph_init_uv(ctx);
+	if (!uv) return NULL;
+	if (ignoremissing){
+		int x;
+		for (x=0;x<bundle->ph_names_count;x++) str_replace_ph_set_ph_uv(ctx,uv,bundle->ph_names[x],bundle->ph_names_l[x],bundle->ph_values[x],bundle->ph_values_l[x],NULL);
+	} else {
+		int x;
+		for (x=0;x<bundle->ph_names_count;x++) if (str_replace_ph_set_ph_uv(ctx,uv,bundle->ph_names[x],bundle->ph_names_l[x],bundle->ph_values[x],bundle->ph_values_l[x],NULL)==0) return uv;
+	}
+	return uv;
 }
 
 
@@ -509,9 +550,87 @@ int str_replace_ph_subst (
 		}
 	}
 	dst[szout]=0;
-	return szout;
+	return szout; ///@return size of output if all ok 
 }
 
+
+phctx_namevalue_bundle_t* str_replace_ph_bundle (phctx_t *ctx, 	phctx_user_values_t *uv /* = NULL */) {
+	if (!ctx) return NULL; ///@return NULL on failure
+	int x,sizeneeded=0,headsize=sizeof(phctx_namevalue_bundle_t)+(2*sizeof(int)+2*sizeof(char*))*ctx->ph_names_count;
+	if (uv) {
+		for (x=0;x<ctx->ph_names_count; x++) {
+			if (ctx->ph_names[x]) sizeneeded+=ctx->ph_names_l[x]+1;
+			if (uv->ph_values[x]) sizeneeded+=uv->ph_values_l[x]+1;
+		}
+	} else {
+		for (x=0;x<ctx->ph_names_count; x++) {
+			if (ctx->ph_names[x]) sizeneeded+=ctx->ph_names_l[x]+1;
+			if (ctx->ph_values[x]) sizeneeded+=ctx->ph_values_l[x]+1;
+		}
+	}
+	phctx_namevalue_bundle_t* bundle=ctx->malloc(headsize+sizeneeded);
+	if (!bundle) return NULL; //alocate failed!
+	
+	//set head
+	memset(bundle,0,headsize);
+	bundle->ph_names_count=ctx->ph_names_count;
+	bundle->max_name_l=ctx->max_name_l;
+	if (uv) {
+		bundle->max_value_l=uv->max_value_l;
+	} else {
+		bundle->max_value_l=ctx->max_value_l;
+	}
+	char *data= (char*)bundle;
+	data+=sizeof(phctx_namevalue_bundle_t);
+	bundle->ph_names=(char **)data;
+	data+=sizeof(char*)*ctx->ph_names_count;
+	bundle->ph_names_l=(int *)data;
+	data+=sizeof(int)*ctx->ph_names_count;
+	bundle->ph_values=(char **)data;
+	data+=sizeof(char*)*ctx->ph_names_count;
+	bundle->ph_values_l=(int *)data;
+	data+=sizeof(int)*ctx->ph_names_count;
+	// head set!
+	
+	//copy data
+	if (uv) {
+		for (x=0;x<ctx->ph_names_count; x++) {
+			if (ctx->ph_names[x]) {
+				bundle->ph_names[x]=data;
+				bundle->ph_names_l[x]=ctx->ph_names_l[x];
+				memcpy (data,ctx->ph_names[x],bundle->ph_names_l[x]);
+				data+=bundle->ph_names_l[x]; *data=0;data++;
+			} //else - already zeroed-out
+			if (uv->ph_values[x]) {
+				bundle->ph_values[x]=data;
+				bundle->ph_values_l[x]=uv->ph_values_l[x];
+				memcpy (data,uv->ph_values[x],bundle->ph_values_l[x]);
+				data+=bundle->ph_values_l[x]; *data=0;data++;
+			} //else - already zeroed-out
+		}
+	} else {
+		for (x=0;x<ctx->ph_names_count; x++) {
+			if (ctx->ph_names[x]) {
+				bundle->ph_names[x]=data;
+				bundle->ph_names_l[x]=ctx->ph_names_l[x];
+				memcpy (data,ctx->ph_names[x],bundle->ph_names_l[x]);
+				data+=bundle->ph_names_l[x]; *data=0;data++;
+			} //else - already zeroed-out
+			if (ctx->ph_values[x]) {
+				bundle->ph_values[x]=data;
+				bundle->ph_values_l[x]=ctx->ph_values_l[x];
+				memcpy (data,ctx->ph_values[x],bundle->ph_values_l[x]);
+				data+=bundle->ph_values_l[x]; *data=0;data++;
+			} //else - already zeroed-out
+		}
+	}
+	
+	return bundle;
+}
+
+void str_replace_ph_bundle_free (phctx_t *ctx,phctx_namevalue_bundle_t *bundle) {
+	if (ctx) ctx->free(bundle);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ////////////////////// Simple Search-and-replace
