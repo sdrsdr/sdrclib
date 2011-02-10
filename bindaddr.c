@@ -22,6 +22,9 @@
 #include <netdb.h>
 #include <string.h>
 
+#include <sys/types.h>          
+#include <sys/socket.h>
+
 int bindaddr (struct sockaddr_in *sadr,const char *host, int port) {
 
 	memset (sadr,0,sizeof(*sadr));
@@ -38,3 +41,8 @@ int bindaddr (struct sockaddr_in *sadr,const char *host, int port) {
 	}
 	return 1;
 }
+int canreuseaddr (int sock) {
+	int optval=1;
+ 	return setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval));
+}
+

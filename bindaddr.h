@@ -30,5 +30,6 @@
 #define bindsok(sok,addr) bind(sok,(struct sockaddr *)addr,sizeof(struct sockaddr_in))
 
 int bindaddr (struct sockaddr_in *sadr,const char *host, int port);
+int canreuseaddr (int sock);
 
 #endif
