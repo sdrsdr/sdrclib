@@ -151,7 +151,7 @@ dll_blockh_t *dll_rm (dll_listh_t *list,  dll_blockh_t *block) {
 
 void dll_iterate_fwd (dll_listh_t*list, dll_list_iterator_t*iterator){
 	if (iterator){
-		memset (iterator,0,sizeof(iterator));
+		memset (iterator,0,sizeof(dll_list_iterator_t));
 		iterator->eol=1;
 	}
 	if (!list || !iterator) return;
@@ -168,7 +168,7 @@ void dll_iterate_fwd (dll_listh_t*list, dll_list_iterator_t*iterator){
 
 void dll_iterate_bwd (dll_listh_t*list, dll_list_iterator_t*iterator){
 	if (iterator){
-		memset (iterator,0,sizeof(iterator));
+		memset (iterator,0,sizeof(dll_list_iterator_t));
 		iterator->eol=1;
 		iterator->bwd=1;
 	}
