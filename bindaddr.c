@@ -43,6 +43,13 @@ int bindaddr (struct sockaddr_in *sadr,const char *host, int port) {
 }
 int canreuseaddr (int sock) {
 	int optval=1;
- 	return setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval));
+	return setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&optval, sizeof(optval));
+}
+
+int connsock(int sock, const char *host, int port){
+	struct sockaddr_in connsock_addr;
+	if (!bindaddr (&connsock_addr, host, port)) return 0;
+	if (connect(sock,(struct sockaddr *)&connsock_addr,sizeof(connsock_addr))==0) return 1;
+	else return 0;
 }
 

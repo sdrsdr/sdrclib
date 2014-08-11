@@ -27,9 +27,10 @@
 #define udpsocket()  socket(AF_INET, SOCK_DGRAM, 0)
 #define tcpsocket()  socket(AF_INET, SOCK_STREAM, 0)
 
-#define bindsok(sok,addr) bind(sok,(struct sockaddr *)addr,sizeof(struct sockaddr_in))
+#define bindsock(sok,addr) bind(sok,(struct sockaddr *)addr,sizeof(struct sockaddr_in))
 
 int bindaddr (struct sockaddr_in *sadr,const char *host, int port);
 int canreuseaddr (int sock);
+int connsock(int sok, const char *host, int port);
 
 #endif
