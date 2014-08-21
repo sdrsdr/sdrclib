@@ -70,7 +70,7 @@ int msplit_str (char *src, char* *starts,int *lengths, char *seps, int maxstarts
 	*lengths=0;
 	while ((c=*cc)!=0) {
 		if (mode==0 && (c==sep1 || c==sep2 || c==sep3 || c==brksep)) { //was text now sep
-			mode=1; *seps=c;
+			mode=1; *seps=c;seps++;
 			if (brkat && c==brksep) {
 				*brkat=cc;
 				mode=3;
@@ -85,7 +85,7 @@ int msplit_str (char *src, char* *starts,int *lengths, char *seps, int maxstarts
 			}
 		} else if (mode==1 && (c==sep1 || c==sep2 || c==sep3 || c==brksep)){ //was sep now sep
 			if (!contsep) { //was sep now sep and not continueing separator: output an empty token
-				starts++; nt++; seps++; *seps=c;
+				starts++; nt++;  *seps=c;seps++;
 				(*starts)=NULL;
 				lengths++;
 				(*lengths)=0;
