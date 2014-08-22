@@ -21,6 +21,7 @@ int split_str (char *src, char* *starts,int *lengths, int maxstarts, char sep, i
 //same as split_str with multiple separator and a break separator which needs brkat set to non NULL to triger and store break position, lastparsed holds ponter to last parsed char
 int msplit_str (char *src, char* *starts,int *lengths, char *seps, int maxstarts, char sep1,char sep2, char sep3, char brksep, char **brkat,char **lastparsed, int contsep);
 
+char *strtrim(char *start, int *len, char trim1, char trim2, char trim3);
 #ifdef  __cplusplus
 }
 #endif
