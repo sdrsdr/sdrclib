@@ -48,7 +48,7 @@ int easyparse(
 	void*userdata ///<aux data for callback
 	);
 
-/**the dump parser 
+/**the dumb parser 
 	white space delimited name=value pairs. No white space allowed around =
 */
 int dumbparse(
