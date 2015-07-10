@@ -1,7 +1,7 @@
 #ifndef str_split_h_SDR_321234msddaa_included
 #define str_split_h_SDR_321234msddaa_included
 
-
+/* Part of sdrclib from https://github.com/sdrsdr/sdrclib */
  
 //---------------------------------------------------------------------------
 // char *src  -> Source to split
