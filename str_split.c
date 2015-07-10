@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "str_split.h"
 
+/* Part of sdrclib from https://github.com/sdrsdr/sdrclib */
+
 //---------------------------------------------------------------------------
 // char *src  -> Source to split
 // char *starts[maxstarts] -> tokens starts are stored here (this points to src's memory)
