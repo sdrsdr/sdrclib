@@ -16,12 +16,15 @@
 extern "C" {
 #endif
 
-int split_str (char *src, char* *starts,int *lengths, int maxstarts, char sep, int contsep);
+int str_split (const char *src, const char* *starts,int *lengths, int maxstarts, char sep, int contsep);
 
-//same as split_str with multiple separator and a break separator which needs brkat set to non NULL to triger and store break position, lastparsed holds ponter to last parsed char
-int msplit_str (char *src, char* *starts,int *lengths, char *seps, int maxstarts, char sep1,char sep2, char sep3, char brksep, char **brkat,char **lastparsed, int contsep);
+//same as sat_split with multiple separator and a break separator which needs brkat set to non NULL to triger and store break position, lastparsed holds ponter to last parsed char
+int str_split_m (const char *src, const char* *starts,int *lengths, char *seps, int maxstarts, char sep1,char sep2, char sep3, char brksep, const char **brkat,const char **lastparsed, int contsep);
 
-char *strtrim(char *start, int *len, char trim1, char trim2, char trim3);
+//same as str_split_m but binary safe(\0 is considered data): you need to supply src size in src_sz
+int str_split_mb (const char *src, size_t src_sz, const char* *starts,int *lengths, char *seps, int maxstarts, char sep1,char sep2, char sep3, char brksep, const char **brkat,const char **lastparsed, int contsep);
+
+
 #ifdef  __cplusplus
 }
 #endif
