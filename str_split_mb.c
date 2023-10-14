@@ -12,7 +12,7 @@
 // maxstarts -> zizeof (starts)=zizeof (lengths)..
 // char sep1, sep2, sep3  -> tokens separator
 // char brksep  -> line break indicator
-// char **brkat -->line break found at
+// char **brkat -->line break found at (no line break search performed if NULL)
 // char  **lastparsed -->resume parsing from here
 // contsep -> treat two-or-more separator as one separator OR add a   starts[current]=NULL for every two separators
 // return -> num of tokens found
